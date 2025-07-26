@@ -718,7 +718,7 @@ if ($NonReportHosts.Count -gt 0) {
 
 # ======= COPY CHECKLISTS TO STIG-MANAGER DIR =======
 $MovedCKLCount   = 0
-$STIGManPrepDir  = Join-Path $CKLDir "_Stig-Manager"
+$STIGManPrepDir  = Join-Path $CKLDir "_STIG-Manager"
 
 # --- Archive setup ---
 $ArchiveDate     = Get-Date -Format 'yyyyMMdd'
