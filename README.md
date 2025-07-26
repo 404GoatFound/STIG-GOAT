@@ -10,12 +10,6 @@ STIG-GOAT.ps1 automates the evaluation of Windows hosts and Cisco devices agains
 - **Do NOT hardcode passwords or sensitive credentials in scripts.**  
   Always use secure credential management (environment variables, vaults, etc).
 - This script performs destructive file operations (`Remove-Item -Recurse -Force`).  
-  **Test in a non-production environment first.**
-- Scheduled tasks may be created with admin privileges.  
-  Know what you’re doing.
-- No warranty, no support.  
-  Use at your own risk.
-
 ---
 
 ## Prerequisites
