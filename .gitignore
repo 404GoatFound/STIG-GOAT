@@ -1,0 +1,19 @@
+# OS and temp files
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+
+# VSCode
+.vscode/
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+
+# Secrets
+.env
+*.pem
+*.key
+token.token
