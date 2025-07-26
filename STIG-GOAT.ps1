@@ -6,9 +6,10 @@ $ScriptVersion = 1.0
 
 # Replace with your share path, ensure it is accessible by all hosts. Ensure share name is "EvalSTIG-Operational"
 $Share = "\\x.x.x.x\EvalSTIG-Operational"
+$LocalCyberRoot = "C:\CYBERSECURITY"
 
 # Wipe out local cybersecurity working directory (for testing or initial setup)
-# Remove-Item -Path C:\CYBERSECURITY -Force -Recurse -ErrorAction SilentlyContinue
+# Remove-Item -Path $LocalCyberRoot -Force -Recurse -ErrorAction SilentlyContinue
 
 # ==================== GENERAL CONFIGURATION ====================
 # Host that handles phase 2 STIGMAN-Prep execution
@@ -55,18 +56,21 @@ $CiscoDevices = @(
 # =================== DO NOT MODIFY BELOW THIS LINE ===================
 # ==================== DERIVED PATHS AND VARIABLES ====================
 
-$hostname              = $env:COMPUTERNAME
-$LocalESTIGOperational = "C:\CYBERSECURITY\EvalSTIG-Operational"
-$ShareAFPath           = Join-Path $Share "AnswerFiles"
-$FindingsLog           = "C:\CYBERSECURITY\FindingsLog.csv"
-$LogFile               = "C:\CYBERSECURITY\$hostname-ESTIG-Log.txt"
-$LocalAFPath           = "$LocalESTIGOperational\AnswerFiles"
-$SumLogFile            = "$Share\Logs\STIGMANPrepSummary.log"
-$Marking               = $ScanType
-$ScriptStartTime       = Get-Date
-$AFPath                = "$LocalESTIGOperational\AnswerFiles"
-$LocalCKLDir           = Join-Path -Path $LocalESTIGOperational $hostname
-$CKLDir                = Join-Path -Path $Share "Checklists"
+$hostname            = $env:COMPUTERNAME
+$LocalESTIGOperational = Join-Path $LocalCyberRoot "EvalSTIG-Operational"
+$ShareAFPath         = Join-Path $Share "AnswerFiles"
+$FindingsLog         = Join-Path $LocalCyberRoot "FindingsLog.csv"
+$LogFile             = Join-Path $LocalCyberRoot "$hostname-ESTIG-Log.txt"
+$LocalAFPath         = Join-Path $LocalESTIGOperational "AnswerFiles"
+$SumLogFile          = Join-Path $Share "Logs\STIGMANPrepSummary.log"
+$Marking             = $ScanType
+$ScriptStartTime     = Get-Date
+$AFPath              = Join-Path $LocalESTIGOperational "AnswerFiles"
+$LocalCKLDir         = Join-Path -Path $LocalESTIGOperational $hostname
+$CKLDir              = Join-Path -Path $Share "Checklists"
+$HostCKLDir          = Join-Path -Path $CKLDir "$hostname\Checklist"
+$EvaluateSTIGScript  = Join-Path $LocalESTIGOperational "Evaluate-STIG\Evaluate-STIG.ps1"
+$ESTIGLogs           = Join-Path $Share "Logs\ESTIG-Logs"
 # ==================== FUNCTIONS ====================
 
 function LogMsg {
@@ -122,7 +126,7 @@ function Get-LastFinding {
 
 function ESTIGRun {
     $StartTime      = Get-Date
-    $ScriptPath     = "$LocalESTIGOperational\Evaluate-STIG\Evaluate-STIG.ps1"
+    $ScriptPath     = $EvaluateSTIGScript
     $OutputPath     = "$LocalESTIGOperational"
 
     LogMsg "Executing Evaluate-STIG..."
@@ -204,7 +208,6 @@ if (Test-Path -Path $Share) {
 }
 
     # --- Move logs to share ---
-    $ESTIGLogs      = "$Share\Logs\ESTIG-Logs"
     $logFileOnShare = Join-Path $ESTIGLogs "$hostname-ESTIG-Log.txt"
 
     if (-not (Test-Path -Path $ESTIGLogs)) {
@@ -254,8 +257,6 @@ if (Test-Path -Path $Share) {
 
 # Remove any existing checklists in host checklist directory just in case
 
-$HostCKLDir = Join-Path -Path $CKLDir "$hostname\Checklist"
-
 if (Test-Path $HostCKLDir) {
     $files = Get-ChildItem -Path $HostCKLDir -File -Recurse -ErrorAction SilentlyContinue
     if ($files.Count -gt 0) {
@@ -276,8 +277,6 @@ LogMsg "--------STEP 2--------"
 #LogMsg "Waiting for share to stabilize..."
 Start-Sleep -Seconds 30 # Initial sleep to allow share to stabilize
 LogMsg "Checking for updates to Answer Files and Evaluate-STIG..."
-
-$ESTIGLogs      = "$Share\Logs\ESTIG-Logs"
 $Today = (Get-Date).Date
 
 # Get log files modified today
@@ -349,10 +348,9 @@ if (-not $LocalLastModified -or $LocalLastModified -lt $ShareLastModified) {
 LogMsg "--------STEP 3--------"
 
 # Unblock all files under CYBERSECURITY before running
-Get-ChildItem -Path "C:\CYBERSECURITY" -Recurse | Unblock-File
+Get-ChildItem -Path $LocalCyberRoot -Recurse | Unblock-File
 
 # Verify Evaluate-STIG script exists, or exit
-$EvaluateSTIGScript = "$LocalESTIGOperational\Evaluate-STIG\Evaluate-STIG.ps1"
 
 if (-not (Test-Path -Path $EvaluateSTIGScript)) {
     LogMsg "Evaluate-STIG script not found. Exiting."
@@ -401,8 +399,6 @@ if ($VerifyFindings -eq 1) {
 #######################################################
 LogMsg "--------STEP 4--------"
 # ======= DEFINE PATHS =======
-$CKLDir             = Join-Path -Path $Share "Checklists"
-$HostCKLDir         = Join-Path -Path $CKLDir "$hostname\Checklist"
 $LocalPath          = "$LocalESTIGOperational\$hostname"
 $LocalCKLPath       = Join-Path $LocalPath "Checklist"
 
@@ -456,7 +452,6 @@ if ($EnableCisco -eq 1){
     $plinkPath = "$LocalESTIGOperational\Tools\plink.exe"
     $port      = 22
     $command   = 'show tec'
-    $CKLDir    = Join-Path -Path $Share "Checklists"
 
     # Ensure plink exists
     if (-not (Test-Path -Path $plinkPath)) {
@@ -574,8 +569,6 @@ schtasks.exe /Create /TN $taskName /TR `"$batFilePath`" /SC ONCE /ST $TaskStartT
     # ========== RUN EVALUATE-STIG AGAINST EACH DEVICE ==========
     $ThrottleLimit = 5
     $VulnTimeout   = 5
-    $Output        = "CombinedCKLB"
-    $ScriptPath    = "$LocalESTIGOperational\Evaluate-STIG\Evaluate-STIG.ps1"
 
     foreach ($device in $CiscoDevices) {
         $showTecPath = Join-Path (Join-Path "$LocalESTIGOperational\Tools" $device.hostname) 'showtec.txt'
@@ -586,7 +579,7 @@ schtasks.exe /Create /TN $taskName /TR `"$batFilePath`" /SC ONCE /ST $TaskStartT
         }
 
         LogSum "Running Evaluate-STIG for $($device.hostname)..."
-        & $ScriptPath -ScanType $ScanType -Output $Output -AnswerKey $AnswerKey -AFPath $AFPath -OutputPath $CKLDir -CiscoConfig $showTecPath -ThrottleLimit $ThrottleLimit -VulnTimeout $VulnTimeout -ExcludeSTIG $ExcludeSTIG -Marking $Marking
+        & $EvaluateSTIGScript -ScanType $ScanType -Output $Output -AnswerKey $AnswerKey -AFPath $AFPath -OutputPath $CKLDir -CiscoConfig $showTecPath -ThrottleLimit $ThrottleLimit -VulnTimeout $VulnTimeout -ExcludeSTIG $ExcludeSTIG -Marking $Marking
 
         $checklistPath = Join-Path -Path $CKLDir -ChildPath "$($device.hostname)\Checklist"
         $cklbFiles = @(Get-ChildItem -Path $checklistPath -Filter *.cklb -File -ErrorAction SilentlyContinue)
@@ -634,8 +627,6 @@ if ($CheckInterval -ge $LogInterval -or $LogInterval -le 0) {
 
 # ======= DISCOVER HOST FOLDERS AND LOGS UP FRONT =======
 $AllHostFolders = Get-ChildItem -Path $CKLDir -Directory | Where-Object { !$_.Name.StartsWith('_') } | Select-Object -ExpandProperty Name
-$Today = (Get-Date).Date
-$TodaysLogs = Get-ChildItem -Path $ESTIGLogs -File | Where-Object { $_.LastWriteTime.Date -eq $Today }
 $LiveHosts = $TodaysLogs | ForEach-Object {
     if ($_.Name -match "^(.*)-ESTIG-Log\.txt$") { $Matches[1] }
 } | Where-Object { $_ } | Sort-Object -Unique
