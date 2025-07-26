@@ -287,7 +287,11 @@ $TodaysLogs = Get-ChildItem -Path $ESTIGLogs -File | Where-Object {
 
 $HostCount = $TodaysLogs.Count
 $MaxStaggerSeconds = $HostCount * 3 # 3 seconds per host
-$StaggerSeconds = Get-Random -Minimum 0 -Maximum $MaxStaggerSeconds
+if ($MaxStaggerSeconds -lt 1) {
+    $StaggerSeconds = 0
+} else {
+    $StaggerSeconds = Get-Random -Minimum 0 -Maximum $MaxStaggerSeconds
+}
 
 # ================== ANSWER FILES UPDATE ==================
 
