@@ -1,9 +1,16 @@
 # STIG-GOAT.ps1
 # GOAT – Governance, Orchestration, Automation, & Telemetry 
-STIG-GOAT.ps1 automates the evaluation of Windows hosts and Cisco devices against Security Technical Implementation Guides (STIGs), using the Evaluate-STIG tool and live logging to a network share.  
+STIG-GOAT.ps1 automates the evaluation of Windows hosts and Cisco devices against Security Technical Implementation Guides (STIGs), using the Evaluate-STIG tool and live logging to a network share.
 **This script is intended as a reference template only. Review and adapt for your own environment.**
 
 ---
+
+## Key Features
+
+- Automates Evaluate-STIG execution across multiple Windows hosts.
+- Optional Cisco device scanning using scheduled tasks and Plink.
+- Verifies findings by rerunning Evaluate-STIG until results stabilize.
+- Archives the `_STIG-Manager` directory daily and rotates old archives.
 
 ## ⚠️ WARNING
 
@@ -29,8 +36,8 @@ STIG-GOAT.ps1 automates the evaluation of Windows hosts and Cisco devices agains
   - Identify a single host to perform aggregation and Cisco operations (`$STIGManPrepHost`).
   - Must have rights to create and run scheduled tasks (if Cisco automation enabled).
 - **Directory Structure**:  
-  - The script expects or creates several directories both locally (default: `C:\CYBERSECURITY`) and on the network share.
-  - Change `$LocalESTIGOperational` if root C: is not writable or not desirable.
+  - The script creates its working directories under a local root path (default: `C:\CYBERSECURITY`).
+  - Change `$LocalCyberRoot` if the default location is not appropriate.
 - **Permissions**:  
   - Script may require Administrator rights for certain scheduled tasks and file operations.
 - **PowerShell Execution Policy**:  
@@ -51,6 +58,9 @@ If you are using the **STIGMan-Watcher** application, simply point it at the `_S
 Before running the script, set these variables:
 
 ```powershell
+# Local working directory root
+$LocalCyberRoot = "C:\CYBERSECURITY"
+
 # Share configuration
 $Share = "\\x.x.x.x\EvalSTIG-Operational" # Update to your actual network share
 
@@ -80,3 +90,4 @@ $ExcludeSTIG = "MSDefender,WinFirewall,Apache24SvrWin,Apache24SiteWin"
 $PrepWaitTime = 240 # Minutes to wait for hosts to report
 $VerifyFindings = 1 # Enable findings verification
 $ArchiveAge = 90    # Days to retain archives
+```
