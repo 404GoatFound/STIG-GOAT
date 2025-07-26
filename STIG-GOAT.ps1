@@ -196,12 +196,6 @@ LogMsg "Executing Automate-STIG.ps1 script version $ScriptVersion on $hostname"
 LogMsg "--------STEP 1--------"
 LogMsg "Ensured required local subdirectories exist"
 
-# ================== NETWORK DRIVE HANDLING ==================
-if (Test-Path -Path U:\) {
-    Remove-PSDrive -Name U -Force -ErrorAction SilentlyContinue
-    LogMsg "Existing PSDrive found, Removed PS-Drive U"
-} 
-
 # ================== VERIFY SHARE ACCESS ==================
 if (Test-Path -Path $Share) {
 
@@ -439,13 +433,6 @@ $Minutes = [math]::Floor($Duration.TotalSeconds / 60)
 $Seconds = [math]::Round($Duration.TotalSeconds % 60)
 LogMsg "----------------------"
 LogMsg ("Total Script Execution completed in {0}m, {1}s" -f $Minutes, $Seconds)
-
-# Unmap drive if not the prep host
-if ($hostname -ne $STIGManPrepHost) {
-    if (Test-Path -Path U:\) {
-        Remove-PSDrive -Name U -Force -ErrorAction SilentlyContinue
-    }
-}
 
 # PHASE 2: STIGManPrep
 #######################################################
@@ -806,14 +793,6 @@ if ($FinalMissingHosts.Count -gt 0) {
 LogSum "Total host directories scanned: $($AllHostFolders.Count)"
 LogSum "Total checklists copied to STIG-Manager directory: $MovedCKLCount"
 
-  # Remove U: drive if it exists (if you mapped it)
-    try {
-        if (Get-PSDrive -Name U -ErrorAction SilentlyContinue) {
-            Remove-PSDrive -Name U -Force -ErrorAction SilentlyContinue
-        }
-    } catch {
-        LogSum "Failed to remove U: drive: $_"
-    }
     ####################################
     # TIMING AND COMPLETION LOGGING
     ####################################
