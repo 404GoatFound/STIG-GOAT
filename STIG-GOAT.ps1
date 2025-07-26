@@ -173,7 +173,7 @@ function ESTIGRun {
 #######################################################
 # STEP 1: Ensure local and share directories exist, map to share
 #######################################################
-# ================== LOG & Report Cleanup CLEANUP ==================
+# ================== LOG & Report Cleanup ==================
 # Remove old log file
 Remove-Item -Path $LogFile -Force -ErrorAction SilentlyContinue
 
